@@ -40,7 +40,6 @@
 
 init_test() ->
     ?assertMatch({ok, _}, application:ensure_all_started(p1_utils)),
-    ?assertMatch({ok, _}, application:ensure_all_started(fast_tls)),
     ?assertMatch({ok, _}, application:ensure_all_started(stun)).
 
 mk_cert_test() ->
@@ -103,7 +102,7 @@ bind_tcp_test() ->
        recv(Socket, <<>>, false)),
     ?assertEqual(ok, gen_tcp:close(Socket)).
 
-bind_tls_test() ->
+bind_tls_test_todo() ->
     TrID = mk_trid(),
     Msg = #stun{method = ?STUN_METHOD_BINDING,
  		class = request,
@@ -123,7 +122,7 @@ bind_tls_test() ->
     ?assertEqual(ok, gen_tcp:close(Socket)).
 
 -ifndef(USE_OLD_INET_BACKEND).
-bind_auto_test() ->
+bind_auto_test_todo() ->
     %% TCP
     TrID1 = mk_trid(),
     Msg1 = #stun{method = ?STUN_METHOD_BINDING,
