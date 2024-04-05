@@ -124,28 +124,34 @@ accept(Transport, ListenSocket, Opts) ->
     Opts1 = [{session_id, ID} | Opts],
     stun_logger:set_metadata(listener, Transport, ID),
     case gen_tcp:accept(ListenSocket) of
+
 	{ok, Socket} when Proxy ->
-	    case p1_proxy_protocol:decode(gen_tcp, Socket, 10000) of
-		{{Addr, Port}, {PeerAddr, PeerPort}} = SP ->
-		    Opts2 = [{sock_peer_name, SP} | Opts1],
-		    ?LOG_INFO("Accepting proxied connection: ~s -> ~s",
-			      [stun_logger:encode_addr({PeerAddr, PeerPort}),
-			       stun_logger:encode_addr({Addr, Port})]),
-		    case stun:start({gen_tcp, Socket}, Opts2) of
-			{ok, Pid} ->
-			    gen_tcp:controlling_process(Socket, Pid);
-			{error, Reason} ->
-			    ?LOG_NOTICE("Cannot start connection: ~s", [Reason]),
-			    gen_tcp:close(Socket)
-		    end;
-		{error, Reason} ->
-		    ?LOG_ERROR("Cannot parse proxy protocol: ~s",
-			       [inet:format_error(Reason)]),
-		    gen_tcp:close(Socket);
-		{undefined, undefined} ->
-		    ?LOG_ERROR("Cannot parse proxy protocol: unknown protocol"),
-		    gen_tcp:close(Socket)
-	    end;
+            %% Disabled ha-proxy handling.
+            %%
+	    %% case p1_proxy_protocol:decode(gen_tcp, Socket, 10000) of
+            %%	{{Addr, Port}, {PeerAddr, PeerPort}} = SP ->
+            %%	    Opts2 = [{sock_peer_name, SP} | Opts1],
+            %%	    ?LOG_INFO("Accepting proxied connection: ~s -> ~s",
+            %%		      [stun_logger:encode_addr({PeerAddr, PeerPort}),
+            %%		       stun_logger:encode_addr({Addr, Port})]),
+            %%	    case stun:start({gen_tcp, Socket}, Opts2) of
+            %%		{ok, Pid} ->
+            %%		    gen_tcp:controlling_process(Socket, Pid);
+            %%		{error, Reason} ->
+            %%		    ?LOG_NOTICE("Cannot start connection: ~s", [Reason]),
+            %%		    gen_tcp:close(Socket)
+            %%	    end;
+            %%	{error, Reason} ->
+            %%	    ?LOG_ERROR("Cannot parse proxy protocol: ~s",
+            %%		       [inet:format_error(Reason)]),
+            %%	    gen_tcp:close(Socket);
+            %%	{undefined, undefined} ->
+            %%	    ?LOG_ERROR("Cannot parse proxy protocol: unknown protocol"),
+            %%	    gen_tcp:close(Socket)
+            %%   end;
+
+            ?LOG_ERROR("Proxy protocol not supported."),
+            gen_tcp:close(Socket);
 	{ok, Socket} ->
 	    case {inet:peername(Socket),
 		  inet:sockname(Socket)} of
