@@ -35,11 +35,8 @@
 
 -include("stun.hrl").
 
--ifdef(USE_OLD_CRYPTO_HMAC).
-crypto_hmac(Type, Key, Data) -> crypto:hmac(Type, Key, Data).
--else.
-crypto_hmac(Type, Key, Data) -> crypto:mac(hmac, Type, Key, Data).
--endif.
+crypto_hmac(Type, Key, Data) ->
+    crypto:mac(hmac, Type, Key, Data).
 
 %%====================================================================
 %% API

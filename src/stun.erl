@@ -820,12 +820,6 @@ get_peername(Sock, Opts) ->
 	    inet:peername(Sock)
     end.
 
--ifdef(USE_OLD_INET_BACKEND).
--dialyzer({[no_match], [get_sockmod/2]}).
-is_tls_handshake(_Sock) ->
-    ?LOG_ERROR("Multiplexing TCP and TLS requires a newer Erlang/OTP version"),
-    {error, eprotonosupport}.
--else.
 is_tls_handshake({_, _, {_, Socket}}) ->
     case socket:recvfrom(Socket, 10, [peek], ?TIMEOUT) of
 	{ok, {_, <<22, 3, _:4/binary, 0, _:2/binary, 3>>}} ->
@@ -838,7 +832,6 @@ is_tls_handshake({_, _, {_, Socket}}) ->
 	    ?LOG_INFO("Cannot determine transport protocol: ~s", [Reason]),
 	    false
     end.
--endif.
 
 maybe_starttls(Sock, fast_tls, Opts) ->
     case proplists:is_defined(certfile, Opts) of

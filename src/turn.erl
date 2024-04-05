@@ -758,12 +758,5 @@ run_hook(HookName, _State, _Msg) ->
     ?LOG_DEBUG("No callback function specified for '~s' hook", [HookName]),
     ok.
 
--ifdef(USE_OLD_LOGGER).
--ifdef(debug).
-maybe_log(Term) -> Term.
--else.
-maybe_log(_Term) -> ok.
--endif.
--else.
-maybe_log(Term) -> Term.
--endif.
+maybe_log(Term) ->
+    Term.

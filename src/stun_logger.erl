@@ -33,65 +33,6 @@
 
 %% API.
 
--ifdef(USE_OLD_LOGGER).
--export([log/2, log/3]).
-
--spec start() -> ok.
-start() ->
-    ok.
-
--spec stop() -> ok.
-stop() ->
-    ok.
-
--spec set_metadata(sub_domain(), transport()) -> ok.
-set_metadata(SubDomain, Transport) ->
-    put(?MODULE, #{domain => [stun, SubDomain],
-		   stun_transport => encode_transport(Transport)}),
-    ok.
-
--spec set_metadata(sub_domain(), transport(), binary()) -> ok.
-set_metadata(SubDomain, Transport, ID) ->
-    put(?MODULE, #{domain => [stun, SubDomain],
-		   stun_transport => encode_transport(Transport),
-		   stun_session_id => ID}),
-    ok.
-
--spec set_metadata(sub_domain(), sock_mod(), binary(),
-		   {inet:ip_address(), inet:port_number()},
-		   binary() | anonymous) -> ok.
-set_metadata(SubDomain, SockMod, ID, Addr, User) ->
-    put(?MODULE, #{domain => [stun, SubDomain],
-		   stun_transport => encode_transport(SockMod),
-		   stun_session_id => ID,
-		   stun_client => encode_addr(Addr),
-		   stun_user => User}),
-    ok.
-
--spec add_metadata(logger:metadata()) -> ok.
-add_metadata(Meta) ->
-    put(?MODULE, maps:merge(get(?MODULE), Meta)),
-    ok.
-
--spec log(info | warning | error, iodata() | atom() | map()) -> ok.
-log(Level, #{verbatim := {Format, Args}}) ->
-    log(Level, Format, Args);
-log(Level, Text) ->
-    {Format, Args} = format_msg(Text, get(?MODULE)),
-    case Level of
-	info ->
-	    error_logger:info_msg(Format, Args);
-	warning ->
-	    error_logger:warning_msg(Format, Args);
-	error ->
-	    error_logger:error_msg(Format, Args)
-    end.
-
--spec log(info | warning | error, io:format(), [term()]) -> ok.
-log(Level, Format, Args) ->
-    Text = io_lib:format(Format, Args),
-    log(Level, Text).
--else.
 -export([filter/2]).
 
 -spec start() -> ok.
@@ -158,7 +99,6 @@ filter(#{meta := #{domain := [stun | _],
     Event#{msg := format_msg(Text, Meta)};
 filter(_Event, _Extra) ->
     ignore.
--endif.
 
 -spec set_metadata(sub_domain(), sock_mod(), binary(),
 		   {inet:ip_address(), inet:port_number()}) -> ok.

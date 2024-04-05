@@ -112,15 +112,10 @@ init(IP, Port, udp, Opts) ->
 
 -spec listen(transport(), port_number(), opts())
       -> {ok, tcp_socket()} | {error, term()}.
--ifdef(USE_OLD_INET_BACKEND).
-listen(_Transport, Port, Opts) ->
-    gen_tcp:listen(Port, Opts).
--else.
 listen(auto, Port, Opts) ->
     gen_tcp:listen(Port, [{inet_backend, socket} | Opts]);
 listen(_Transport, Port, Opts) ->
     gen_tcp:listen(Port, Opts).
--endif.
 
 -spec accept(transport(), tcp_socket(), opts()) -> no_return().
 accept(Transport, ListenSocket, Opts) ->
