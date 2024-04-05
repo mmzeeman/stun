@@ -23,7 +23,7 @@
 
 -module(stun).
 
--define(GEN_FSM, p1_fsm).
+-define(GEN_FSM, gen_fsm).
 -behaviour(?GEN_FSM).
 
 %% API
@@ -723,7 +723,7 @@ cancel_timer(TRef) ->
     end.
 
 now_priority() ->
-    {p1_time_compat:monotonic_time(micro_seconds), p1_time_compat:unique_integer([monotonic])}.
+    {erlang:monotonic_time(micro_seconds), erlang:unique_integer([monotonic])}.
 
 clean_treap(Treap, CleanPriority) ->
     case treap:is_empty(Treap) of
@@ -746,7 +746,7 @@ make_nonce(Addr, Nonces) ->
     {Nonce, treap:insert(Nonce, Priority, Addr, NewNonces)}.
 
 have_nonce(Nonce, Nonces) ->
-    TS = p1_time_compat:monotonic_time(micro_seconds),
+    TS = erlang:monotonic_time(micro_seconds),
     NewNonces = clean_treap(Nonces, TS - ?NONCE_LIFETIME),
     case treap:lookup(Nonce, NewNonces) of
 	{ok, _, _} ->
@@ -887,9 +887,6 @@ run_hook(HookName, _State, _Msg) ->
     ?LOG_DEBUG("No callback function specified for '~s' hook", [HookName]),
     ok.
 
--define(THRESHOLD, 16#10000000000000000).
-
--ifdef(RAND_UNIFORM).
 rand_uniform() ->
     rand:uniform().
 
@@ -898,14 +895,3 @@ rand_uniform(N) ->
 
 rand_uniform(N, M) ->
     rand:uniform(M-N+1) + N-1.
--else.
-
-rand_uniform() ->
-    crypto:rand_uniform(0, ?THRESHOLD)/?THRESHOLD.
-
-rand_uniform(N) ->
-    crypto:rand_uniform(1, N+1).
-
-rand_uniform(N, M) ->
-    crypto:rand_uniform(N, M+1).
--endif.

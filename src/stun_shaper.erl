@@ -43,7 +43,7 @@
 new(none) -> none;
 new(MaxRate) when is_integer(MaxRate) ->
     #maxrate{maxrate = MaxRate, lastrate = 0.0,
-	     lasttime = p1_time_compat:monotonic_time(micro_seconds)}.
+	     lasttime = erlang:monotonic_time(micro_seconds)}.
 
 -spec update(shaper(), integer()) -> {shaper(), integer()}.
 
@@ -51,13 +51,13 @@ update(none, _Size) -> {none, 0};
 update(#maxrate{} = State, Size) ->
     MinInterv = 1000 * Size /
 		  (2 * State#maxrate.maxrate - State#maxrate.lastrate),
-    Interv = (p1_time_compat:monotonic_time(micro_seconds) - State#maxrate.lasttime) /
+    Interv = (erlang:monotonic_time(micro_seconds) - State#maxrate.lasttime) /
 	       1000,
     Pause = if MinInterv > Interv ->
 		   1 + trunc(MinInterv - Interv);
 	       true -> 0
 	    end,
-    NextNow = p1_time_compat:monotonic_time(micro_seconds) + Pause * 1000,
+    NextNow = erlang:monotonic_time(micro_seconds) + Pause * 1000,
     {State#maxrate{lastrate =
 		       (State#maxrate.lastrate +
 			  1000000 * Size / (NextNow - State#maxrate.lasttime))
