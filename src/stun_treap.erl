@@ -35,85 +35,87 @@
 
 -export_type([treap/0]).
 
-empty() -> nil.
+%
+empty() ->
+    nil.
 
+%
 insert(Key, Priority, Value, Tree) ->
-    HashKey = {erlang:phash2(Key), Key},
-    insert1(Tree, HashKey, Priority, Value).
+    insert1(Tree, hash_key(Key), Priority, Value).
 
 insert1(nil, HashKey, Priority, Value) ->
     {HashKey, Priority, Value, nil, nil};
-insert1({HashKey1, Priority1, Value1, Left, Right} = Tree, HashKey, Priority, Value) ->
-    if HashKey < HashKey1 ->
-	   heapify({HashKey1, Priority1, Value1, insert1(Left, HashKey, Priority, Value), Right});
-       HashKey > HashKey1 ->
-	   heapify({HashKey1, Priority1, Value1, Left, insert1(Right, HashKey, Priority, Value)});
-       Priority == Priority1 ->
-	   {HashKey, Priority, Value, Left, Right};
-       true ->
-	   insert1(delete_root(Tree), HashKey, Priority, Value)
-    end.
+insert1({HashKey1, Priority1, Value1, Left, Right}, HashKey, Priority, Value) when HashKey < HashKey1 ->
+    heapify({HashKey1, Priority1, Value1, insert1(Left, HashKey, Priority, Value), Right});
+insert1({HashKey1, Priority1, Value1, Left, Right}, HashKey, Priority, Value) when HashKey > HashKey1 ->
+    heapify({HashKey1, Priority1, Value1, Left, insert1(Right, HashKey, Priority, Value)});
+insert1({_HashKey1, Priority1, _Value1, Left, Right}, HashKey, Priority, Value) when Priority == Priority1 ->
+    {HashKey, Priority, Value, Left, Right};
+insert1({_HashKey1, _Priority1, _Value1, _Left, _Right} = Tree, HashKey, Priority, Value) ->
+    insert1(delete_root(Tree), HashKey, Priority, Value).
 
-heapify({_HashKey, _Priority, _Value, nil, nil} = Tree) ->
+% 
+heapify({_, _, _, nil, nil} = Tree) ->
     Tree;
-heapify({HashKey, Priority, Value, nil = Left, {HashKeyR, PriorityR, ValueR, LeftR, RightR}} = Tree) ->
-    if PriorityR > Priority ->
-	   {HashKeyR, PriorityR, ValueR, {HashKey, Priority, Value, Left, LeftR}, RightR};
-       true -> Tree
-    end;
-heapify({HashKey, Priority, Value, {HashKeyL, PriorityL, ValueL, LeftL, RightL}, nil = Right} = Tree) ->
-    if PriorityL > Priority ->
-	   {HashKeyL, PriorityL, ValueL, LeftL, {HashKey, Priority, Value, RightL, Right}};
-       true -> Tree
-    end;
-heapify({HashKey, Priority, Value, {HashKeyL, PriorityL, ValueL, LeftL, RightL} = Left, {HashKeyR, PriorityR, ValueR, LeftR, RightR} = Right} = Tree) ->
-    if PriorityR > Priority ->
-	   {HashKeyR, PriorityR, ValueR, {HashKey, Priority, Value, Left, LeftR}, RightR};
-       PriorityL > Priority ->
-	   {HashKeyL, PriorityL, ValueL, LeftL, {HashKey, Priority, Value, RightL, Right}};
-       true -> Tree
-    end.
+heapify({HashKey, Priority, Value, nil = Left, {HashKeyR, PriorityR, ValueR, LeftR, RightR}}) when PriorityR > Priority ->
+    {HashKeyR, PriorityR, ValueR, {HashKey, Priority, Value, Left, LeftR}, RightR};
+heapify({_, _, _, nil, {_, _, _, _, _}} = Tree) ->
+    Tree;
+heapify({HashKey, Priority, Value, {HashKeyL, PriorityL, ValueL, LeftL, RightL}, nil = Right}) when PriorityL > Priority ->
+    {HashKeyL, PriorityL, ValueL, LeftL, {HashKey, Priority, Value, RightL, Right}};
+heapify({_, _, _, {_, _, _, _, _}, nil} = Tree) ->
+    Tree;
+heapify({HashKey, Priority, Value, {_, _, _, _, _} = Left, {HashKeyR, PriorityR, ValueR, LeftR, RightR}}) when PriorityR > Priority ->
+    {HashKeyR, PriorityR, ValueR, {HashKey, Priority, Value, Left, LeftR}, RightR};
+heapify({HashKey, Priority, Value, {HashKeyL, PriorityL, ValueL, LeftL, RightL}, {_, _, _, _, _} = Right}) when PriorityL > Priority ->
+    {HashKeyL, PriorityL, ValueL, LeftL, {HashKey, Priority, Value, RightL, Right}};
+heapify({_, _, _, {_, _, _, _, _}, {_, _, _, _, _}} = Tree) ->
+    Tree.
 
+%
 delete(Key, Tree) ->
-    HashKey = {erlang:phash2(Key), Key},
-    delete1(HashKey, Tree).
+    delete1(hash_key(Key), Tree).
 
-delete1(_HashKey, nil) -> nil;
-delete1(HashKey, {HashKey1, Priority1, Value1, Left, Right} = Tree) ->
-    if HashKey < HashKey1 ->
-	   {HashKey1, Priority1, Value1, delete1(HashKey, Left), Right};
-       HashKey > HashKey1 ->
-	   {HashKey1, Priority1, Value1, Left, delete1(HashKey, Right)};
-       true -> delete_root(Tree)
-    end.
+delete1(_HashKey, nil) ->
+    nil;
+delete1(HashKey, {HashKey1, Priority1, Value1, Left, Right}) when HashKey < HashKey1 ->
+    {HashKey1, Priority1, Value1, delete1(HashKey, Left), Right};
+delete1(HashKey, {HashKey1, Priority1, Value1, Left, Right}) when HashKey > HashKey1 ->
+    {HashKey1, Priority1, Value1, Left, delete1(HashKey, Right)};
+delete1(_, {_, _, _, _, _} = Tree) ->
+    delete_root(Tree).
 
-delete_root({HashKey, Priority, Value, Left, Right}) ->
-    case {Left, Right} of
-      {nil, nil} -> nil;
-      {_, nil} -> Left;
-      {nil, _} -> Right;
-      {{HashKeyL, PriorityL, ValueL, LeftL, RightL}, {HashKeyR, PriorityR, ValueR, LeftR, RightR}} ->
-	  if PriorityL > PriorityR ->
-		 {HashKeyL, PriorityL, ValueL, LeftL, delete_root({HashKey, Priority, Value, RightL, Right})};
-	     true ->
-		 {HashKeyR, PriorityR, ValueR, delete_root({HashKey, Priority, Value, Left, LeftR}), RightR}
-	  end
-    end.
+%
+delete_root({_, _, _, nil, nil}) ->
+    nil;
+delete_root({_, _, _, Left, nil}) ->
+    Left;
+delete_root({_, _, _, nil, Right}) ->
+    Right;
+delete_root({HashKey, Priority, Value, {HashKeyL, PriorityL, ValueL, LeftL, RightL}, {_, PriorityR, _, _, _}=Right}) when PriorityL > PriorityR ->
+    {HashKeyL, PriorityL, ValueL, LeftL, delete_root({HashKey, Priority, Value, RightL, Right})};
+delete_root({HashKey, Priority, Value, {_, _, _, _, _}=Left, {HashKeyR, PriorityR, ValueR, LeftR, RightR}}) ->
+    {HashKeyR, PriorityR, ValueR, delete_root({HashKey, Priority, Value, Left, LeftR}), RightR}.
 
+%
 delete_higher_priorities(Treap, DeletePriority) ->
     case is_empty(Treap) of
-      true -> Treap;
-      false ->
-          {_Key, Priority, _Value} = get_root(Treap),
-          if Priority > DeletePriority ->
-                 delete_higher_priorities(delete_root(Treap), DeletePriority);
-             true -> Treap
-          end
+        true ->
+            Treap;
+        false ->
+            case get_root(Treap) of
+                {_, Priority, _} when Priority > DeletePriority ->
+                    delete_higher_priorities(delete_root(Treap), DeletePriority);
+                _ ->
+                    Treap
+            end
     end.
 
+%
 priority_from_current_time() ->
     priority_from_current_time(0).
 
+%
 priority_from_current_time(MsOffset) ->
     case MsOffset of
         0 ->
@@ -122,39 +124,56 @@ priority_from_current_time(MsOffset) ->
             {-erlang:monotonic_time(micro_seconds) + MsOffset, 0}
     end.
 
-is_empty(nil) -> true;
+%
+is_empty(nil) ->
+    true;
 is_empty({_HashKey, _Priority, _Value, _Left, _Right}) ->
     false.
 
+%
 get_root({{_Hash, Key}, Priority, Value, _Left, _Right}) ->
     {Key, Priority, Value}.
 
+%
 lookup(Key, Tree) ->
-    HashKey = {erlang:phash2(Key), Key},
-    lookup1(Tree, HashKey).
+    lookup1(Tree, hash_key(Key)).
 
-lookup1(nil, _HashKey) -> error;
-lookup1({HashKey1, Priority1, Value1, Left, Right}, HashKey) ->
-    if HashKey < HashKey1 -> lookup1(Left, HashKey);
-       HashKey > HashKey1 -> lookup1(Right, HashKey);
-       true -> {ok, Priority1, Value1}
-    end.
+lookup1(nil, _HashKey) ->
+    error;
+lookup1({HashKey1, _Priority1, _Value1, Left, _Right}, HashKey) when HashKey < HashKey1 ->
+    lookup1(Left, HashKey);
+lookup1({HashKey1, _Priority1, _Value1, _Left, Right}, HashKey) when HashKey > HashKey1 ->
+    lookup1(Right, HashKey);
+lookup1({_HashKey1, Priority1, Value1, _Left, _Right}, _HashKey) ->
+    {ok, Priority1, Value1}.
 
+%
 fold(_F, Acc, nil) -> Acc;
 fold(F, Acc, {{_Hash, Key}, Priority, Value, Left, Right}) ->
     Acc1 = F({Key, Priority, Value}, Acc),
     Acc2 = fold(F, Acc1, Left),
     fold(F, Acc2, Right).
+% 
+to_list(Tree) ->
+    to_list(Tree, []).
 
-to_list(Tree) -> to_list(Tree, []).
-
-to_list(nil, Acc) -> Acc;
+to_list(nil, Acc) ->
+    Acc;
 to_list(Tree, Acc) ->
     Root = get_root(Tree),
     to_list(delete_root(Tree), [Root | Acc]).
 
-from_list(List) -> from_list(List, nil).
+from_list(List) ->
+    from_list(List, nil).
 
 from_list([{Key, Priority, Value} | Tail], Tree) ->
     from_list(Tail, insert(Key, Priority, Value, Tree));
-from_list([], Tree) -> Tree.
+from_list([], Tree) ->
+    Tree.
+
+%%
+%% Helpers
+%%
+
+hash_key(Key) ->
+    {erlang:phash2(Key), Key}.
