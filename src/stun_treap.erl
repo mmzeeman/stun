@@ -101,12 +101,12 @@ delete_root({HashKey, Priority, Value, Left, Right}) ->
     end.
 
 delete_higher_priorities(Treap, DeletePriority) ->
-    case treap:is_empty(Treap) of
+    case is_empty(Treap) of
       true -> Treap;
       false ->
-          {_Key, Priority, _Value} = treap:get_root(Treap),
+          {_Key, Priority, _Value} = get_root(Treap),
           if Priority > DeletePriority ->
-                 delete_higher_priorities(treap:delete_root(Treap), DeletePriority);
+                 delete_higher_priorities(delete_root(Treap), DeletePriority);
              true -> Treap
           end
     end.

@@ -155,6 +155,7 @@ handle_sync_event(_Event, _From, StateName, State) ->
 
 handle_info({tcp, _Sock, TLSData}, StateName,
 	    #state{sock_mod = fast_tls} = State) ->
+    %% todo - remove
     NewState = update_shaper(State, TLSData),
     case fast_tls:recv_data(NewState#state.sock, TLSData) of
 	{ok, Data} ->
@@ -833,6 +834,7 @@ is_tls_handshake({_, _, {_, Socket}}) ->
     end.
 
 maybe_starttls(Sock, fast_tls, Opts) ->
+    %% todo
     case proplists:is_defined(certfile, Opts) of
 	true ->
 	    TLSOpts = lists:filter(
