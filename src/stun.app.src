@@ -26,7 +26,7 @@
   {vsn,          "1.2.12"},
   {modules,      []},
   {registered,   []},
-  {applications, [kernel, stdlib, p1_utils]},
+  {applications, [kernel, stdlib]},
   {mod,          {stun_app,[]}},
 
   %% hex.pm packaging:

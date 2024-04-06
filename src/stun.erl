@@ -43,11 +43,10 @@
 	 terminate/3,
 	 code_change/4]).
 
+-export([unmap_v4_addr/1]).
+
 %% gen_fsm states
 -export([session_established/2]).
-
-%% helper functions
--export([rand_uniform/0, rand_uniform/1, rand_uniform/2, unmap_v4_addr/1]).
 
 -include("stun.hrl").
 -include("stun_logger.hrl").
@@ -78,7 +77,7 @@
 	 blacklist_peers = []        :: turn:accesslist(),
 	 whitelist_peers = []        :: turn:accesslist(),
 	 auth = user                 :: anonymous | user,
-	 nonces = treap:empty()      :: treap:treap(),
+	 nonces = stun_treap:empty() :: stun_treap:treap(),
 	 realm = <<"">>              :: binary(),
 	 auth_fun                    :: function() | undefined,
 	 hook_fun                    :: function() | undefined,
@@ -726,13 +725,13 @@ now_priority() ->
     {erlang:monotonic_time(micro_seconds), erlang:unique_integer([monotonic])}.
 
 clean_treap(Treap, CleanPriority) ->
-    case treap:is_empty(Treap) of
+    case stun_treap:is_empty(Treap) of
 	true ->
 	    Treap;
 	false ->
-	    {_Key, {TS, _}, _Value} = treap:get_root(Treap),
+	    {_Key, {TS, _}, _Value} = stun_treap:get_root(Treap),
 	    if TS < CleanPriority ->
-		    clean_treap(treap:delete_root(Treap), CleanPriority);
+		    clean_treap(stun_treap:delete_root(Treap), CleanPriority);
 	       true ->
 		    Treap
 	    end
@@ -741,14 +740,14 @@ clean_treap(Treap, CleanPriority) ->
 make_nonce(Addr, Nonces) ->
     Priority = now_priority(),
     {TS, _} = Priority,
-    Nonce = integer_to_binary(rand_uniform(1 bsl 32)),
+    Nonce = integer_to_binary(rand:uniform(1 bsl 32)),
     NewNonces = clean_treap(Nonces, TS - ?NONCE_LIFETIME),
-    {Nonce, treap:insert(Nonce, Priority, Addr, NewNonces)}.
+    {Nonce, stun_treap:insert(Nonce, Priority, Addr, NewNonces)}.
 
 have_nonce(Nonce, Nonces) ->
     TS = erlang:monotonic_time(micro_seconds),
     NewNonces = clean_treap(Nonces, TS - ?NONCE_LIFETIME),
-    case treap:lookup(Nonce, NewNonces) of
+    case stun_treap:lookup(Nonce, NewNonces) of
 	{ok, _, _} ->
 	    {true, NewNonces};
 	_ ->
@@ -886,12 +885,3 @@ run_hook(HookName,
 run_hook(HookName, _State, _Msg) ->
     ?LOG_DEBUG("No callback function specified for '~s' hook", [HookName]),
     ok.
-
-rand_uniform() ->
-    rand:uniform().
-
-rand_uniform(N) ->
-    rand:uniform(N).
-
-rand_uniform(N, M) ->
-    rand:uniform(M-N+1) + N-1.

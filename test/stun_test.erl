@@ -39,7 +39,6 @@
 -include("stun.hrl").
 
 init_test() ->
-    ?assertMatch({ok, _}, application:ensure_all_started(p1_utils)),
     ?assertMatch({ok, _}, application:ensure_all_started(stun)).
 
 mk_cert_test() ->
@@ -378,7 +377,7 @@ recv(TLSSocket, Buf, true) ->
     end.
 
 mk_trid() ->
-    stun:rand_uniform(1 bsl 96).
+    rand:uniform(1 bsl 96).
 
 get_cert() ->
     <<"-----BEGIN CERTIFICATE-----
