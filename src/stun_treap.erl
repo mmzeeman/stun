@@ -24,13 +24,23 @@
 
 -module(stun_treap).
 
--export([empty/0, insert/4, delete/2, delete_root/1,
-	 get_root/1, lookup/2, is_empty/1, fold/3, from_list/1,
-	 to_list/1, delete_higher_priorities/2,
-        priority_from_current_time/0, priority_from_current_time/1]).
+-export([
+    empty/0,
+    insert/4,
+    delete/2,
+    delete_root/1,
+    get_root/1,
+    lookup/2,
+    is_empty/1,
+    fold/3,
+    from_list/1,
+    to_list/1,
+    delete_higher_priorities/2,
+    priority_from_current_time/0,
+    priority_from_current_time/1
+]).
 
 -type hashkey() :: {non_neg_integer(), any()}.
-
 -type treap() :: {hashkey(), any(), any(), treap(), treap()} | nil.
 
 -export_type([treap/0]).
