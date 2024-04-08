@@ -20,7 +20,6 @@
 %%%
 %%%-------------------------------------------------------------------
 
--
 -module(stun_treap_test).
 
 -include_lib("eunit/include/eunit.hrl").

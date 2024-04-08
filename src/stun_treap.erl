@@ -35,9 +35,10 @@
     fold/3,
     from_list/1,
     to_list/1,
-    delete_higher_priorities/2,
-    priority_from_current_time/0,
-    priority_from_current_time/1
+
+    clean_treap/2,
+    clean_priority/2,
+    now_priority/0
 ]).
 
 -type hashkey() :: {non_neg_integer(), any()}.
@@ -107,31 +108,26 @@ delete_root({HashKey, Priority, Value, {HashKeyL, PriorityL, ValueL, LeftL, Righ
 delete_root({HashKey, Priority, Value, {_, _, _, _, _}=Left, {HashKeyR, PriorityR, ValueR, LeftR, RightR}}) ->
     {HashKeyR, PriorityR, ValueR, delete_root({HashKey, Priority, Value, Left, LeftR}), RightR}.
 
-%
-delete_higher_priorities(Treap, DeletePriority) ->
-    case is_empty(Treap) of
-        true ->
-            Treap;
-        false ->
-            case get_root(Treap) of
-                {_, Priority, _} when Priority > DeletePriority ->
-                    delete_higher_priorities(delete_root(Treap), DeletePriority);
-                _ ->
-                    Treap
-            end
-    end.
+% 
+now_priority() ->
+    {erlang:monotonic_time(micro_seconds), erlang:unique_integer([monotonic])}.
 
 %
-priority_from_current_time() ->
-    priority_from_current_time(0).
+clean_priority({TS, _}, LifeTime) ->
+    {TS - LifeTime, 0}.
 
 %
-priority_from_current_time(MsOffset) ->
-    case MsOffset of
-        0 ->
-            {-erlang:monotonic_time(micro_seconds), -erlang:unique_integer([positive])};
-        _ ->
-            {-erlang:monotonic_time(micro_seconds) + MsOffset, 0}
+clean_treap(Treap, CleanPriority) ->
+    case stun_treap:is_empty(Treap) of
+	true ->
+	    Treap;
+	false ->
+	    {_Key, Priority, _Value} = stun_treap:get_root(Treap),
+	    if Priority < CleanPriority ->
+		    clean_treap(stun_treap:delete_root(Treap), CleanPriority);
+	       true ->
+		    Treap
+	    end
     end.
 
 %

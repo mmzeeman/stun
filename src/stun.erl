@@ -722,32 +722,15 @@ cancel_timer(TRef) ->
             ok
     end.
 
-now_priority() ->
-    {erlang:monotonic_time(micro_seconds), erlang:unique_integer([monotonic])}.
-
-clean_treap(Treap, CleanPriority) ->
-    case stun_treap:is_empty(Treap) of
-	true ->
-	    Treap;
-	false ->
-	    {_Key, {TS, _}, _Value} = stun_treap:get_root(Treap),
-	    if TS < CleanPriority ->
-		    clean_treap(stun_treap:delete_root(Treap), CleanPriority);
-	       true ->
-		    Treap
-	    end
-    end.
-
 make_nonce(Addr, Nonces) ->
-    Priority = now_priority(),
-    {TS, _} = Priority,
+    Priority = stun_treap:now_priority(),
     Nonce = integer_to_binary(rand:uniform(1 bsl 32)),
-    NewNonces = clean_treap(Nonces, TS - ?NONCE_LIFETIME),
+    NewNonces = stun_treap:clean_treap(Nonces, stun_treap:clean_priority(Priority, ?NONCE_LIFETIME)),
     {Nonce, stun_treap:insert(Nonce, Priority, Addr, NewNonces)}.
 
 have_nonce(Nonce, Nonces) ->
-    TS = erlang:monotonic_time(micro_seconds),
-    NewNonces = clean_treap(Nonces, TS - ?NONCE_LIFETIME),
+    CleanPriority = stun_treap:clean_priority(stun_treap:now_priority(), ?NONCE_LIFETIME),
+    NewNonces = stun_treap:clean_treap(Nonces, CleanPriority),
     case stun_treap:lookup(Nonce, NewNonces) of
 	{ok, _, _} ->
 	    {true, NewNonces};
